@@ -17,6 +17,10 @@
   --edge-spouse: #a21caf;
   --edge-auncle: #d97706;
   --edge-family: #a8a29e;
+  --map-f: #db2777;
+  --map-m: #2563eb;
+  --map-o: #78716c;
+  --map-dim: #e7e5e4;
   color-scheme: light;
 }
 
@@ -33,6 +37,10 @@
   --edge-spouse: #e879f9;
   --edge-auncle: #fbbf24;
   --edge-family: #78716c;
+  --map-f: #f472b6;
+  --map-m: #60a5fa;
+  --map-o: #a8a29e;
+  --map-dim: #292524;
   color-scheme: dark;
 }
 

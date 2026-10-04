@@ -60,6 +60,8 @@ docker compose ps        # app "healthy"; cloudflared, sync, backups "running"
 docker compose logs -f sync
 ```
 
+Each sync also recomputes the home-page family map, which appears once the first sync finishes. `MAP_MIN_SCENES` in `.env` (default 2) sets how many scenes a pair needs together to count as a recurring family. After changing it, redo the map with `docker compose run --rm scrape --layout`.
+
 One-off runs still work alongside it, for example a scoped crawl or re-running inference after a rules change:
 
 ```bash

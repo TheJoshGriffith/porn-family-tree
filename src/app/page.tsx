@@ -1,4 +1,6 @@
+import { FamilyMap } from "@/components/FamilyMap";
 import { PerformerGrid } from "@/components/PerformerGrid";
+import { mapVersion } from "@/lib/maplayout";
 import { mostConnected, searchPerformers, stats } from "@/lib/queries";
 import { forVisitor } from "@/lib/region";
 
@@ -26,11 +28,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-semibold">{q ? `Results for “${q}”` : "Most connected performers"}</h1>
+        <h1 className="text-xl font-semibold">{q ? `Results for “${q}”` : "On-screen families"}</h1>
         <p className="text-sm text-muted">
           {s.performers.toLocaleString()} performers · {s.scenes.toLocaleString()} scenes · {s.links.toLocaleString()} links
         </p>
       </div>
+      {!q && <FamilyMap version={mapVersion()} />}
+      {!q && <h2 className="text-lg font-semibold">Most connected performers</h2>}
       {results.length ? <PerformerGrid performers={results} /> : <p className="text-muted">Nobody matches that name.</p>}
     </div>
   );

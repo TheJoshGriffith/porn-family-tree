@@ -30,7 +30,10 @@ export default async function PerformerPage({ params }: PageProps<"/performer/[i
     .map((e) => {
       const otherId = e.a === id ? e.b : e.a;
       const other = byId.get(otherId)!;
-      return { other, label: relativeLabel(e.kind, e.b === id, other.gender, e.step), scenes: e.scenes, kind: e.kind };
+      // A pair can be linked both ways (each played the other's mother in
+      // different scenes), so the key needs the direction as well as the kind.
+      const key = `${otherId}-${e.kind}-${e.a === id ? "out" : "in"}`;
+      return { key, other, label: relativeLabel(e.kind, e.b === id, other.gender, e.step), scenes: e.scenes, kind: e.kind };
     })
     .sort((x, y) => Number(x.kind === "family") - Number(y.kind === "family") || y.scenes - x.scenes);
 
@@ -116,11 +119,11 @@ export default async function PerformerPage({ params }: PageProps<"/performer/[i
   );
 }
 
-function RelativeChips({ items }: { items: { other: { id: string; name: string }; label: string; scenes: number; kind: string }[] }) {
+function RelativeChips({ items }: { items: { key: string; other: { id: string; name: string }; label: string; scenes: number; kind: string }[] }) {
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((d) => (
-        <li key={`${d.other.id}-${d.kind}`}>
+        <li key={d.key}>
           <Link href={`/performer/${d.other.id}`} className="inline-block rounded-full border border-border bg-surface px-3 py-1 text-sm hover:border-accent">
             <span className="text-muted">{d.label}:</span> {d.other.name}
             {d.scenes > 1 && <span className="text-muted"> ×{d.scenes}</span>}

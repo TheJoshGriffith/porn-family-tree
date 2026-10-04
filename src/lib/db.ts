@@ -60,6 +60,13 @@ CREATE INDEX IF NOT EXISTS rel_a ON relationships(a);
 CREATE INDEX IF NOT EXISTS rel_b ON relationships(b);
 
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
+
+-- Home-page network map positions, recomputed by the scraper after each sync.
+CREATE TABLE IF NOT EXISTS map_layout (
+  performer_id TEXT PRIMARY KEY REFERENCES performers(id) ON DELETE CASCADE,
+  x REAL NOT NULL,
+  y REAL NOT NULL
+);
 `;
 
 let db: DatabaseSync | undefined;

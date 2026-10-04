@@ -35,6 +35,7 @@ services:
     environment:
       # Countries (from Cloudflare's CF-IPCountry) that get no images at all.
       RESTRICTED_COUNTRIES: ${RESTRICTED_COUNTRIES-GB} # set empty in .env to disable
+      MAP_MIN_SCENES: ${MAP_MIN_SCENES:-2}
     mem_limit: 512m
     pids_limit: 200
     logging: *logs
@@ -67,6 +68,7 @@ services:
       STASHDB_API_KEY: ${STASHDB_API_KEY:-}
       STASHDB_TAG_IDS: ${STASHDB_TAG_IDS:-}
       STASHDB_MIN_INTERVAL_MS: ${STASHDB_MIN_INTERVAL_MS:-1000}
+      MAP_MIN_SCENES: ${MAP_MIN_SCENES:-2} # must match the app's
     command: ["node", "dist/scrape.mjs", "--every", "${SYNC_EVERY:-6h}"]
     mem_limit: 512m
     logging: *logs
@@ -86,6 +88,7 @@ services:
       STASHDB_API_KEY: ${STASHDB_API_KEY:-}
       STASHDB_TAG_IDS: ${STASHDB_TAG_IDS:-}
       STASHDB_MIN_INTERVAL_MS: ${STASHDB_MIN_INTERVAL_MS:-1000}
+      MAP_MIN_SCENES: ${MAP_MIN_SCENES:-2}
     entrypoint: ["node", "dist/scrape.mjs"]
     mem_limit: 512m
     logging: *logs

@@ -6,6 +6,8 @@
 //   pnpm scrape --list-tags     show which StashDB tags would be used, then exit
 //   pnpm scrape --max-pages 3   cap pages (handy for a first test)
 //   pnpm scrape --reinfer       recompute roles/edges from stored scenes, no network
+//   pnpm scrape --layout        recompute the home-page map layout only
+//                               (every other mode does this automatically)
 //   pnpm scrape --every 6h      incremental sync now, then every 6 hours (for the
 //                               long-running sync container)
 //   pnpm scrape --from "Lexi Lore" --limit 30
@@ -14,6 +16,7 @@
 
 import { getDb, tx } from "../src/lib/db";
 import { inferScene, storeScene } from "../src/lib/ingest";
+import { computeMapLayout } from "../src/lib/maplayout";
 import { runScheduled } from "../src/lib/schedule";
 import { findPerformer, scenesPage, searchTags, type SdbTag } from "../src/lib/stashdb";
 
@@ -48,21 +51,24 @@ async function discoverTags(): Promise<SdbTag[]> {
   return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-async function main() {
+async function sync(): Promise<boolean> {
   if (flag("--reinfer")) {
     const ids = (db.prepare("SELECT id FROM scenes").all() as { id: string }[]).map((r) => r.id);
     tx(() => ids.forEach(inferScene));
     console.log(`Re-inferred ${ids.length} scenes.`);
-    return;
+    return true;
   }
 
   const tags = await discoverTags();
   console.log(`Using ${tags.length} tags:\n  ${tags.map((t) => `${t.name} (${t.id})`).join("\n  ")}`);
-  if (flag("--list-tags")) return;
+  if (flag("--list-tags")) return false;
   if (!tags.length) throw new Error("No tags found; set STASHDB_TAG_IDS manually.");
 
   const from = opt("--from");
-  if (from) return crawl(from, Number(opt("--limit") ?? 30), tags.map((t) => t.id));
+  if (from) {
+    await crawl(from, Number(opt("--limit") ?? 30), tags.map((t) => t.id));
+    return true;
+  }
 
   const since = flag("--full") ? undefined : getMeta("last_updated");
   const maxPages = Number(opt("--max-pages") ?? Infinity);
@@ -96,6 +102,17 @@ async function main() {
 
   const totals = db.prepare("SELECT (SELECT count(*) FROM scenes) s, (SELECT count(*) FROM performers) p, (SELECT count(*) FROM relationships) r").get() as { s: number; p: number; r: number };
   console.log(`Database: ${totals.s} scenes, ${totals.p} performers, ${totals.r} relationship links.`);
+  return true;
+}
+
+function relayout() {
+  const { nodes, edges, ms } = computeMapLayout();
+  console.log(`Map layout: ${nodes} performers, ${edges} links in ${(ms / 1000).toFixed(1)}s.`);
+}
+
+async function main() {
+  if (flag("--layout")) return relayout();
+  if (await sync()) relayout();
 }
 
 /**

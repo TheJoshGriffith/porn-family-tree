@@ -55,6 +55,8 @@ Re-run inference over stored scenes after changing the rules:
 pnpm scrape --reinfer
 ```
 
+The home page also has a **map of recurring families**: everyone who has played relatives with the same partner in 2+ scenes (`MAP_MIN_SCENES`), drawn with sigma.js (WebGL). Positions are computed with ForceAtlas2 by the scraper after every sync (`pnpm scrape --layout` to redo just that), so browsers only draw. One-off pairings are left out deliberately. Porn casting is a small world: with every pairing included, almost everyone joins one giant hairball.
+
 Contradictions are normal: A can be B's stepmom in one scene and her stepsister in another. Every edge is kept with its scene count. The tree layout places each person at the generation reached by the shortest path from whoever you're viewing.
 
 ## Deploying
