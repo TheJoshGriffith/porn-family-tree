@@ -68,7 +68,9 @@ export function getDb(): DatabaseSync {
   if (db) return db;
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   db = new DatabaseSync(DB_PATH);
-  db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
+  // busy_timeout: the site, scheduled sync, backups and one-off scrapes share
+  // this file, so wait for another writer instead of failing "database is locked".
+  db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 30000;");
   db.exec(SCHEMA);
   migrate(db);
   return db;
