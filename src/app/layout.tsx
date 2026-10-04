@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Toggles } from "@/components/Toggles";
-import { imagesAllowed } from "@/lib/region";
+import { UkBanner } from "@/components/UkBanner";
+import { imagesAllowed, visitorCountry } from "@/lib/region";
 // React Flow's stylesheet lives here, not in FamilyTree, so it is in <head>
 // before the tree mounts; globals.css comes after so our overrides win.
 import "@xyflow/react/dist/style.css";
@@ -27,7 +28,7 @@ const BOOT = `(() => {
 })()`;
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const images = await imagesAllowed();
+  const [images, country] = await Promise.all([imagesAllowed(), visitorCountry()]);
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Toggles imagesAllowed={images} />
           </div>
         </header>
+        {!images && country === "GB" && <UkBanner />}
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
         <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted">
           Relationships are fictional on-screen roleplay between adult performers, inferred automatically from{" "}

@@ -11,9 +11,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     return (
       <div className="mx-auto max-w-lg py-20 text-center">
         <h1 className="mb-2 text-xl font-semibold">No data yet</h1>
-        <p className="text-muted">
-          Add your StashDB API key to <code>.env.local</code> and run <code>pnpm scrape</code>.
-        </p>
+        {process.env.NODE_ENV === "production" ? (
+          <p className="text-muted">The first sync is still running. Check back shortly.</p>
+        ) : (
+          <p className="text-muted">
+            Add your StashDB API key to <code>.env.local</code> and run <code>pnpm scrape</code>.
+          </p>
+        )}
       </div>
     );
   }

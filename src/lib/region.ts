@@ -31,9 +31,13 @@ export function imagesAllowedFor(country: string | null, restricted: Set<string>
   return !restricted.has(c);
 }
 
+/** Visitor's ISO country from Cloudflare, upper-cased; null if absent. */
+export async function visitorCountry(): Promise<string | null> {
+  return (await headers()).get("cf-ipcountry")?.trim().toUpperCase() || null;
+}
+
 export async function imagesAllowed(): Promise<boolean> {
-  const country = (await headers()).get("cf-ipcountry");
-  return imagesAllowedFor(country, parseRestricted(process.env.RESTRICTED_COUNTRIES), process.env.NODE_ENV === "production");
+  return imagesAllowedFor(await visitorCountry(), parseRestricted(process.env.RESTRICTED_COUNTRIES), process.env.NODE_ENV === "production");
 }
 
 /** Deep copy with every `image_url` nulled. */
