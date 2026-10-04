@@ -1,0 +1,71 @@
+# Production deployment. See DEPLOY.md.
+#
+#   docker compose up -d --build                      site on 127.0.0.1:3000
+#   docker compose --profile https up -d --build      + Caddy with automatic HTTPS
+#   docker compose run --rm scrape --from "Lexi Lore" --limit 30
+#   docker compose run --rm backup
+
+# Hardening shared by every container that runs our image.
+x-hardened: &hardened
+  image: family-tree:latest
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp:size=16m"]
+  volumes:
+    - data:/data # the SQLite database lives here and survives rebuilds/restarts
+
+services:
+  app:
+    <<: *hardened
+    build: .
+    restart: unless-stopped
+    # Next writes its fetch/render cache here; keep it in memory.
+    tmpfs: ["/tmp:size=16m", "/app/.next/cache:size=64m,uid=1000,gid=1000"]
+    # Loopback only. Expose publicly through Caddy (--profile https) or your
+    # own reverse proxy, never directly.
+    ports: ["127.0.0.1:${PORT:-3000}:3000"]
+    mem_limit: 512m
+    pids_limit: 200
+    logging: &logs
+      driver: local
+      options: { max-size: "10m", max-file: "3" }
+
+  # One-off jobs. Only these get the StashDB key; the web app never sees it.
+  scrape:
+    <<: *hardened
+    profiles: [tools]
+    env_file:
+      - path: .env
+        required: false
+    entrypoint: ["node", "dist/scrape.mjs"]
+    mem_limit: 512m
+    logging: *logs
+
+  backup:
+    <<: *hardened
+    profiles: [tools]
+    entrypoint: ["node", "dist/backup.mjs"]
+    logging: *logs
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: [https]
+    restart: unless-stopped
+    depends_on: [app]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:-} # set in .env; required for the https profile
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates; keep them so Let's Encrypt isn't re-hit
+      - caddy_config:/config
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logs
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:

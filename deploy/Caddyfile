@@ -1,0 +1,17 @@
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# Optional: put the whole site behind a password. Generate a hash with
+	#   docker run --rm caddy:2-alpine caddy hash-password --plaintext 'your-password'
+	# then uncomment and paste it below (escape each $ as $$ in this file).
+	# basic_auth {
+	# 	josh <hash>
+	# }
+
+	reverse_proxy app:3000
+}

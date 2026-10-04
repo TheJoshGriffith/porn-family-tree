@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* Theme is an explicit attribute set by an inline script before first paint
+   (see layout.tsx), so dark: utilities key off it rather than the media query. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f4f4f3;
+  --border: #e4e4e2;
+  --fg: #1c1917;
+  --muted: #6b6864;
+  --accent: #be123c;
+  --edge-parent: #be123c;
+  --edge-sibling: #2563eb;
+  --edge-spouse: #a21caf;
+  --edge-auncle: #d97706;
+  --edge-family: #a8a29e;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0a09;
+  --surface: #1c1917;
+  --surface-2: #262220;
+  --border: #36302d;
+  --fg: #f5f5f4;
+  --muted: #a8a29e;
+  --accent: #fb7185;
+  --edge-parent: #fb7185;
+  --edge-sibling: #60a5fa;
+  --edge-spouse: #e879f9;
+  --edge-auncle: #fbbf24;
+  --edge-family: #78716c;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* NSFW filter: on (blurred) unless the viewer opted out. */
+.nsfw {
+  transition: filter 150ms ease;
+}
+:root:not([data-nsfw="show"]) .nsfw {
+  filter: blur(14px) saturate(0.6);
+}
+
+/* Toggle labels: show the one matching the current attribute. */
+:root[data-theme="dark"] .when-light,
+:root:not([data-theme="dark"]) .when-dark,
+:root[data-nsfw="show"] .when-blurred,
+:root:not([data-nsfw="show"]) .when-shown {
+  display: none;
+}
+
+/* React Flow chrome follows our tokens. */
+.react-flow {
+  --xy-background-color: var(--bg);
+  --xy-background-pattern-color: var(--border);
+  --xy-edge-label-background-color: var(--surface);
+  --xy-edge-label-color: var(--fg);
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-background-color-hover: var(--surface-2);
+  --xy-controls-button-color: var(--fg);
+  --xy-controls-button-border-color: var(--border);
+  --xy-attribution-background-color: transparent;
+}
