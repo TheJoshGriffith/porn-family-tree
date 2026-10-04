@@ -11,6 +11,7 @@ visitor ──HTTPS──▶ Cloudflare ◀──outbound tunnel── cloudflar
 - **Cloudflare Tunnel:** `cloudflared` dials *out* to Cloudflare, so the VPS opens no web ports and its IP never appears in DNS. Cloudflare terminates HTTPS.
 - **App container:** non-root user, read-only root filesystem, every Linux capability dropped, `no-new-privileges`, and memory and process limits. It also listens on `127.0.0.1:3000`, reachable only from the VPS itself.
 - **Database:** SQLite in the named volume `data`. It survives `docker compose down`, rebuilds, image upgrades and reboots. Only `docker compose down -v` deletes it.
+- **Sync and backups:** two long-running containers. `sync` pulls new and changed scenes from StashDB every 6 hours, so new performers appear by themselves. `backups` snapshots the database daily. No host cron needed.
 - **Secrets:** each container gets only the one it needs. `cloudflared` gets the tunnel token, `scrape` the StashDB key, and the web app none.
 
 ## 1. Create the tunnel (Cloudflare dashboard)
@@ -39,54 +40,48 @@ git clone https://github.com/TheJoshGriffith/porn-family-tree.git
 cd porn-family-tree
 cp .env.example .env
 chmod 600 .env
-nano .env        # set TUNNEL_TOKEN and STASHDB_API_KEY
+nano .env        # set TUNNEL_TOKEN and STASHDB_API_KEY; keep COMPOSE_PROFILES=tunnel,scheduled
 ```
 
 ## 4. Start it
 
 ```bash
-docker compose --profile tunnel up -d --build
-docker compose --profile tunnel ps     # app should become "healthy"; cloudflared "running"
+docker compose up -d --build
+docker compose ps        # app "healthy"; cloudflared, sync, backups "running"
 ```
 
-The tunnel shows **Healthy** in the dashboard within a few seconds, and the site is live on your hostname.
+`COMPOSE_PROFILES=tunnel,scheduled` in `.env` decides what starts. The tunnel shows **Healthy** in the Cloudflare dashboard within a few seconds.
 
-## 5. Load data
+## 5. Data loads itself
 
-The site starts empty. The scraper never runs by itself:
+`sync` starts straight away. Its first run fetches every family-roleplay scene on StashDB (about 34k scenes, 10–20 minutes). The site fills in as it goes; refresh to see more. After that it checks every 6 hours (`SYNC_EVERY` in `.env`), and those runs take seconds. Watch it with:
 
 ```bash
-docker compose run --rm scrape --from "Lexi Lore" --limit 30    # ~30 people, a few minutes
-docker compose run --rm scrape                                   # or: everything (~34k scenes, 10–20 min)
+docker compose logs -f sync
 ```
 
-Refresh the site afterwards. To keep a full sync current, add a nightly incremental run (`crontab -e`):
+One-off runs still work alongside it, for example a scoped crawl or re-running inference after a rules change:
 
-```cron
-0 3 * * * cd ~/porn-family-tree && docker compose run --rm scrape >> ~/scrape.log 2>&1
+```bash
+docker compose run --rm scrape --from "Lexi Lore" --limit 30   # narrows the site to 30 people…
+docker compose run --rm scrape --reinfer
 ```
 
-Other modes work the same way: `--list-tags`, `--reinfer`, or no arguments for a full sync of every family-roleplay scene (slow: one request per second).
+A `--from` crawl and the scheduled sync pull in different directions. The crawl narrows the site to the people it visited; the next sync puts everyone back. If you want the small, scoped site, remove `scheduled` from `COMPOSE_PROFILES`.
 
 ## Updating
 
 ```bash
 git pull
-docker compose --profile tunnel up -d --build      # data volume is untouched
+docker compose up -d --build      # data volume is untouched
 ```
 
 ## Backups
 
-`backup` writes a consistent snapshot to `/data/backups/` inside the volume and keeps the newest 14. It's safe to run while the site is live:
+The `backups` container writes a consistent snapshot to `/data/backups/` once a day and keeps the newest 14 (`BACKUP_KEEP`). For an extra one on demand, which is safe while the site is live:
 
 ```bash
 docker compose run --rm backup
-```
-
-Nightly at 03:30, via `crontab -e` as `deploy`:
-
-```cron
-30 3 * * * cd ~/porn-family-tree && docker compose run --rm backup >> ~/backup.log 2>&1
 ```
 
 A backup inside the same volume doesn't protect against losing the server. Copy them off-box:
@@ -98,9 +93,9 @@ docker compose cp app:/data/backups ./backups      # then rsync/scp ./backups el
 Restoring:
 
 ```bash
-docker compose stop app
+docker compose stop app sync
 docker compose run --rm --entrypoint sh backup -c 'cp /data/backups/family-<stamp>.db /data/family.db && rm -f /data/family.db-wal /data/family.db-shm'
-docker compose start app
+docker compose start app sync
 ```
 
 ## Regional image blocking
@@ -120,7 +115,7 @@ Many jurisdictions (the UK Online Safety Act, the EU and several US states) requ
 ## Useful commands
 
 ```bash
-docker compose --profile tunnel ps          # status + health
-docker compose logs -f app cloudflared      # logs (rotated: 3 × 10 MB)
+docker compose ps                           # status + health
+docker compose logs -f app sync             # logs (rotated: 3 × 10 MB)
 docker volume inspect porn-family-tree_data
 ```

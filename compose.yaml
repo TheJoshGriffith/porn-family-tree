@@ -1,7 +1,7 @@
 # Production deployment. See DEPLOY.md.
 #
-#   docker compose --profile tunnel up -d --build    site + Cloudflare Tunnel
-#   docker compose up -d --build                     site only, on 127.0.0.1:3000
+#   docker compose up -d --build     starts whatever COMPOSE_PROFILES in .env
+#                                    enables (recommended: tunnel,scheduled)
 #   docker compose run --rm scrape --from "Lexi Lore" --limit 30
 #   docker compose run --rm backup
 #
@@ -56,7 +56,29 @@ services:
     mem_limit: 128m
     logging: *logs
 
-  # One-off jobs.
+  # Long-running jobs (profile "scheduled"). sync runs an incremental StashDB
+  # sync at start-up and then every SYNC_EVERY, picking up new scenes and the
+  # performers in them; backups snapshots the database daily.
+  sync:
+    <<: *hardened
+    profiles: [scheduled]
+    restart: unless-stopped
+    environment:
+      STASHDB_API_KEY: ${STASHDB_API_KEY:-}
+      STASHDB_TAG_IDS: ${STASHDB_TAG_IDS:-}
+      STASHDB_MIN_INTERVAL_MS: ${STASHDB_MIN_INTERVAL_MS:-1000}
+    command: ["node", "dist/scrape.mjs", "--every", "${SYNC_EVERY:-6h}"]
+    mem_limit: 512m
+    logging: *logs
+
+  backups:
+    <<: *hardened
+    profiles: [scheduled]
+    restart: unless-stopped
+    command: ["node", "dist/backup.mjs", "--every", "1d", "--keep", "${BACKUP_KEEP:-14}"]
+    logging: *logs
+
+  # One-off jobs (profile "tools", used via `docker compose run --rm ...`).
   scrape:
     <<: *hardened
     profiles: [tools]

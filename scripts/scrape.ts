@@ -6,12 +6,15 @@
 //   pnpm scrape --list-tags     show which StashDB tags would be used, then exit
 //   pnpm scrape --max-pages 3   cap pages (handy for a first test)
 //   pnpm scrape --reinfer       recompute roles/edges from stored scenes, no network
+//   pnpm scrape --every 6h      incremental sync now, then every 6 hours (for the
+//                               long-running sync container)
 //   pnpm scrape --from "Lexi Lore" --limit 30
 //                               crawl outward from one performer through their
 //                               on-screen relatives, stopping after N people
 
 import { getDb, tx } from "../src/lib/db";
 import { inferScene, storeScene } from "../src/lib/ingest";
+import { runScheduled } from "../src/lib/schedule";
 import { findPerformer, scenesPage, searchTags, type SdbTag } from "../src/lib/stashdb";
 
 const args = process.argv.slice(2);
@@ -146,7 +149,4 @@ async function crawl(name: string, limit: number, tagIds: string[]) {
   console.log(`Database: ${totals.s} scenes; showing ${totals.p} performers with ${totals.r} typed links between them.`);
 }
 
-main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+runScheduled(main);
