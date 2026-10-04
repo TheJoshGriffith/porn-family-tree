@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Toggles } from "@/components/Toggles";
+import { imagesAllowed } from "@/lib/region";
 // React Flow's stylesheet lives here, not in FamilyTree, so it is in <head>
 // before the tree mounts; globals.css comes after so our overrides win.
 import "@xyflow/react/dist/style.css";
@@ -25,7 +26,8 @@ const BOOT = `(() => {
   d.dataset.nsfw = n === "show" ? "show" : "blur";
 })()`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const images = await imagesAllowed();
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
@@ -51,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 className="h-9 w-full rounded-md border border-border bg-surface px-3 text-base outline-none focus:border-accent sm:max-w-sm sm:text-sm"
               />
             </form>
-            <Toggles />
+            <Toggles imagesAllowed={images} />
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>

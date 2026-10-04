@@ -53,8 +53,17 @@ The tunnel shows **Healthy** in the dashboard within a few seconds, and the site
 
 ## 5. Load data
 
+The site starts empty. The scraper never runs by itself:
+
 ```bash
-docker compose run --rm scrape --from "Lexi Lore" --limit 30
+docker compose run --rm scrape --from "Lexi Lore" --limit 30    # ~30 people, a few minutes
+docker compose run --rm scrape                                   # or: everything (~34k scenes, 10–20 min)
+```
+
+Refresh the site afterwards. To keep a full sync current, add a nightly incremental run (`crontab -e`):
+
+```cron
+0 3 * * * cd ~/porn-family-tree && docker compose run --rm scrape >> ~/scrape.log 2>&1
 ```
 
 Other modes work the same way: `--list-tags`, `--reinfer`, or no arguments for a full sync of every family-roleplay scene (slow: one request per second).
@@ -93,6 +102,14 @@ docker compose stop app
 docker compose run --rm --entrypoint sh backup -c 'cp /data/backups/family-<stamp>.db /data/family.db && rm -f /data/family.db-wal /data/family.db-shm'
 docker compose start app
 ```
+
+## Regional image blocking
+
+Visitors whose Cloudflare country (`CF-IPCountry`) is in `RESTRICTED_COUNTRIES` (default `GB`) get no images at all. The server leaves image URLs out of the page instead of blurring them, and the NSFW toggle becomes a "No images in your region" notice. Unknown locations, Tor, and requests without the header (i.e. not via Cloudflare) are treated as restricted.
+
+- Requires **Network → IP Geolocation** to be on for the zone in Cloudflare (it's on by default).
+- To change the list, set `RESTRICTED_COUNTRIES=GB,FR` in `.env`. Set `RESTRICTED_COUNTRIES=` (empty) to disable it.
+- VPN users appear in whatever country their VPN exits from. Ofcom expects reasonable steps beyond plain geolocation, so this reduces risk but doesn't make you compliant.
 
 ## Keeping it private
 

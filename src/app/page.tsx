@@ -1,5 +1,6 @@
 import { PerformerGrid } from "@/components/PerformerGrid";
 import { mostConnected, searchPerformers, stats } from "@/lib/queries";
+import { forVisitor } from "@/lib/region";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const raw = (await searchParams).q;
@@ -17,7 +18,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     );
   }
 
-  const results = q ? searchPerformers(q) : mostConnected();
+  const results = await forVisitor(q ? searchPerformers(q) : mostConnected());
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">

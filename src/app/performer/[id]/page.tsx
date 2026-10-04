@@ -4,6 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import { FamilyTree } from "@/components/FamilyTree";
 import { relativeLabel } from "@/lib/labels";
 import { getFamily, getPerformer, getScenes } from "@/lib/queries";
+import { forVisitor } from "@/lib/region";
 import { ROLE_BY_KEY } from "@/lib/relations";
 
 export async function generateMetadata({ params }: PageProps<"/performer/[id]">) {
@@ -15,11 +16,12 @@ const roleText = (role: string | null, step: number) => (role ? `${step ? "step"
 
 export default async function PerformerPage({ params }: PageProps<"/performer/[id]">) {
   const { id } = await params;
-  const p = getPerformer(id);
-  if (!p) notFound();
+  const found = getPerformer(id);
+  if (!found) notFound();
 
-  const family = getFamily(id);
-  const scenes = getScenes(id);
+  // Everything that renders goes through forVisitor, which drops image URLs
+  // for visitors in restricted regions.
+  const { p, family, scenes } = await forVisitor({ p: found, family: getFamily(id), scenes: getScenes(id) });
   const byId = new Map(family.nodes.map((n) => [n.id, n]));
 
   // Direct relatives, described from this performer's point of view.

@@ -32,6 +32,9 @@ services:
     # Loopback only, for SSH tunnels and debugging. Public traffic arrives via
     # cloudflared over the compose network, so no port is opened to the world.
     ports: ["127.0.0.1:${PORT:-3000}:3000"]
+    environment:
+      # Countries (from Cloudflare's CF-IPCountry) that get no images at all.
+      RESTRICTED_COUNTRIES: ${RESTRICTED_COUNTRIES-GB} # set empty in .env to disable
     mem_limit: 512m
     pids_limit: 200
     logging: *logs
