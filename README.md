@@ -59,7 +59,7 @@ Contradictions are normal: A can be B's stepmom in one scene and her stepsister 
 
 ## Deploying
 
-Docker + Compose, with an optional Caddy front end for HTTPS. See **[DEPLOY.md](DEPLOY.md)**.
+Docker + Compose, published through a Cloudflare Tunnel (no open ports). See **[DEPLOY.md](DEPLOY.md)**.
 
 ## Scripts
 
