@@ -22,6 +22,8 @@ visitor ──HTTPS──▶ Cloudflare ◀──outbound tunnel── cloudflar
 
 Cloudflare creates the DNS record itself. Don't add an A record pointing at the VPS.
 
+4. **Add `www` too.** The tunnel only creates DNS for hostnames you list, so without this `www.` doesn't resolve at all. Add a second public hostname with subdomain `www` and the same service, `HTTP` → `app:3000`. Then, in the domain's dashboard, go to **Rules → Redirect Rules → Create rule → from template → "Redirect from WWW to root"**. That sends a 301 that keeps the path, so the site answers on one canonical address.
+
 ## 2. Prepare the server
 
 As root on a fresh Debian/Ubuntu box:
